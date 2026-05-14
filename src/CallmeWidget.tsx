@@ -4,6 +4,16 @@ const detectRtcUrl = new URL('./vendor/detectWebRTC.min.js', import.meta.url).hr
 const jsSipUrl = new URL('./vendor/jssip.min.js', import.meta.url).href;
 const widgetUrl = new URL('./vendor/widget.min.js', import.meta.url).href;
 
+function stringifyOptions(options: CallmeWidgetOptions | undefined): string {
+  if (!options) return '{}';
+
+  try {
+    return JSON.stringify(options);
+  } catch {
+    return '{}';
+  }
+}
+
 export type CallmeWidgetOptions = {
   shape?: 'circle' | 'square';
   language?: 'en' | 'ru' | 'pl' | 'es' | 'ua' | string;
@@ -93,11 +103,21 @@ export function CallmeWidget({
   const domId = id ?? `callme-widget-${reactId}`;
   const instanceName = objectName ?? `zadarmaCallmeWidget_${reactId}`;
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const onReadyRef = useRef(onReady);
+  const onErrorRef = useRef(onError);
+  const optionsRef = useRef(options);
 
   const resolvedScripts = useMemo(
     () => scriptUrls ?? [detectRtcUrl, jsSipUrl, widgetUrl] as [string, string, string],
     [scriptUrls]
   );
+  const optionsKey = useMemo(() => stringifyOptions(options), [options]);
+
+  useEffect(() => {
+    onReadyRef.current = onReady;
+    onErrorRef.current = onError;
+    optionsRef.current = options;
+  }, [onError, onReady, options]);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,10 +142,10 @@ export function CallmeWidget({
         window[instanceName] = instance;
 
         containerRef.current?.replaceChildren();
-        instance.create({ widgetId, sipId, domElement: domId }, options ?? {});
-        onReady?.();
+        instance.create({ widgetId, sipId, domElement: domId }, optionsRef.current ?? {});
+        onReadyRef.current?.();
       } catch (error) {
-        onError?.(error instanceof Error ? error : new Error(String(error)));
+        onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
       }
     }
 
@@ -140,7 +160,7 @@ export function CallmeWidget({
         window[instanceName] = undefined;
       }
     };
-  }, [domId, instanceName, onError, onReady, options, resolvedScripts, sipId, widgetId]);
+  }, [domId, instanceName, optionsKey, resolvedScripts, sipId, widgetId]);
 
   return <div id={domId} ref={containerRef} className={className} style={style} />;
 }

@@ -1,6 +1,6 @@
 {
   "name": "react-zadarmawidget",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Public React wrapper for the Zadarma Callme WebRTC widget.",
   "keywords": [
     "react",
