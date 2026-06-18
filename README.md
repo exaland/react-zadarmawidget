@@ -1,5 +1,7 @@
 # react-zadarmawidget
 
+[![Node.js Package](https://github.com/exaland/react-zadarmawidget/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/exaland/react-zadarmawidget/actions/workflows/npm-publish.yml)
+
 Librairie React publique pour intégrer le widget WebRTC Callme de Zadarma dans une application React.
 
 Elle encapsule le widget JavaScript historique fourni dans `zip_callmewidget_v2.0.9_full.zip` et expose un composant React typé.
