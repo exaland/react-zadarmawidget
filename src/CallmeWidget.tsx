@@ -4,6 +4,10 @@ const detectRtcUrl = new URL('./vendor/detectWebRTC.min.js', import.meta.url).hr
 const jsSipUrl = new URL('./vendor/jssip.min.js', import.meta.url).href;
 const widgetUrl = new URL('./vendor/widget.min.js', import.meta.url).href;
 
+type FeaturePolicyLike = {
+  allowsFeature: (feature: string) => boolean;
+};
+
 function stringifyOptions(options: CallmeWidgetOptions | undefined): string {
   if (!options) return '{}';
 
@@ -12,6 +16,30 @@ function stringifyOptions(options: CallmeWidgetOptions | undefined): string {
   } catch {
     return '{}';
   }
+}
+
+function getPermissionsPolicy(): FeaturePolicyLike | undefined {
+  if (typeof document === 'undefined') return undefined;
+
+  const policyOwner = document as Document & {
+    permissionsPolicy?: FeaturePolicyLike;
+    featurePolicy?: FeaturePolicyLike;
+  };
+
+  return policyOwner.permissionsPolicy ?? policyOwner.featurePolicy;
+}
+
+function getMicrophonePolicyError(): Error | undefined {
+  const permissionsPolicy = getPermissionsPolicy();
+  if (!permissionsPolicy) return undefined;
+  if (permissionsPolicy.allowsFeature('microphone')) return undefined;
+
+  const embedded = typeof window !== 'undefined' && window.self !== window.top;
+  const message = embedded
+    ? 'Le microphone est bloque par la Permissions Policy du document hote. Si le widget est charge dans une iframe, ajoute allow="microphone" (ou allow="microphone *") sur l\'iframe et autorise aussi cette fonctionnalite via l\'en-tete Permissions-Policy du site parent si necessaire.'
+    : 'Le microphone est bloque par la Permissions Policy du document courant. Autorise microphone via l\'en-tete HTTP Permissions-Policy avant d\'initialiser le widget.';
+
+  return new Error(message);
 }
 
 export type CallmeWidgetOptions = {
@@ -127,6 +155,11 @@ export function CallmeWidget({
         if (typeof window === 'undefined') return;
         if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
           throw new Error('Le widget Zadarma WebRTC doit être utilisé en HTTPS.');
+        }
+
+        const microphonePolicyError = getMicrophonePolicyError();
+        if (microphonePolicyError) {
+          throw microphonePolicyError;
         }
 
         for (const src of resolvedScripts) {

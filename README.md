@@ -57,6 +57,27 @@ export default function App() {
 - Le widget original utilise des variables globales et des callbacks JSONP ; cette librairie les isole autant que possible côté React.
 - Pour plusieurs widgets sur une même page, définis un `objectName` unique pour chaque instance.
 
+## Erreur microphone is not allowed in this document
+
+Si le navigateur affiche `Permissions policy violation: microphone is not allowed in this document`, le problème vient du document hôte, pas du widget lui-même.
+
+Cas le plus fréquent : le composant est rendu dans une iframe sans permission micro. Il faut autoriser explicitement le micro sur l'iframe :
+
+```html
+<iframe
+  src="https://ton-app.example"
+  allow="microphone"
+></iframe>
+```
+
+Selon ton hébergement, il peut aussi falloir autoriser la feature au niveau HTTP :
+
+```http
+Permissions-Policy: microphone=(self)
+```
+
+Si l'application est servie depuis un domaine parent différent, adapte la politique en conséquence, par exemple en autorisant l'origine qui embarque le widget.
+
 ## Héberger les scripts vendor toi-même
 
 Par défaut, les scripts vendor sont empaquetés avec la librairie. Tu peux aussi fournir tes propres URLs :
